@@ -35,4 +35,3 @@ The **NBA Stats Website** is a dynamic platform that allows users to search for 
 Ensure all Maven dependencies are installed.
 Locate and run the main class in your IDE.
 
-# Final-Design-Project
