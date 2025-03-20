@@ -78,4 +78,28 @@ public class PlayerData {
         }
         return suggestions;
     }
+
+    public int comparePoints(String player1, String player2) {
+        Player p1 = findPlayerByName(player1);
+        Player p2 = findPlayerByName(player2);
+
+        if (p1 == null || p2 == null) {
+            System.err.println("❌ ERROR: One or both players not found.");
+            return Integer.MIN_VALUE; // Error code for invalid comparison
+        }
+
+        return Integer.compare(p1.points, p2.points);
+    }
+
+    /**
+     * Finds a player by name.
+     */
+    private Player findPlayerByName(String name) {
+        for (Player p : players) {
+            if (p.name.equalsIgnoreCase(name)) {
+                return p;
+            }
+        }
+        return null;
+    }
 }
