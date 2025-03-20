@@ -1,0 +1,6 @@
+LeBron James, 23, Lakers, 28, 8, 7
+Stephen Curry, 30, Warriors, 30, 5, 6
+Giannis Antetokounmpo, 34, Bucks, 29, 11, 5
+Nikola Jokic, 15, Nuggets, 25, 12, 9
+Kevin Durant, 35, Suns, 27, 7, 5
+Luka Doncic, 77, Mavericks, 32, 9, 8
