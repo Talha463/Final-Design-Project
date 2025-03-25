@@ -19,7 +19,7 @@ public class BasicSearchGUI extends JFrame {
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(30, 30, 30));
 
-        playerData = new PlayerData("src/main/players.txt");
+        playerData = new PlayerData("src/Resources/players.txt");
 
         JPanel inputPanel = new JPanel(new BorderLayout(5, 5));
         inputPanel.setBackground(new Color(50, 50, 50));
