@@ -94,12 +94,32 @@ public class PlayerData {
     /**
      * Finds a player by name.
      */
-    private Player findPlayerByName(String name) {
+    public Player findPlayerByName(String name) {
         for (Player p : players) {
             if (p.name.equalsIgnoreCase(name)) {
                 return p;
             }
         }
         return null;
+    }
+
+    public List<Player> getTopPlayers(String stat, int count) {
+        List<Player> sorted = new ArrayList<>(players);
+        sorted.sort((a, b) -> {
+            int valA = switch (stat.toLowerCase()) {
+                case "points" -> a.points;
+                case "rebounds" -> a.rebounds;
+                case "assists" -> a.assists;
+                default -> 0;
+            };
+            int valB = switch (stat.toLowerCase()) {
+                case "points" -> b.points;
+                case "rebounds" -> b.rebounds;
+                case "assists" -> b.assists;
+                default -> 0;
+            };
+            return Integer.compare(valB, valA); // Descending
+        });
+        return sorted.subList(0, Math.min(count, sorted.size()));
     }
 }

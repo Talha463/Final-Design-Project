@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -16,38 +17,35 @@ public class BasicSearchGUI extends JFrame {
     private JComponent currentCenterComponent;
 
     public BasicSearchGUI() {
-        // Apply FlatLaf modern look
         try {
             UIManager.setLookAndFeel(new FlatDarkLaf());
         } catch (Exception e) {
             System.err.println("Failed to apply FlatLaf");
         }
 
-        setTitle("NBA Stats Search");
-        setSize(1000, 600);
+        setTitle("NBA Stats Search - ESPN Style");
+        setSize(1100, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(30, 30, 30));
 
         playerData = new PlayerData("src/Resources/players.txt");
 
-        // ---------------- TOP: Search Panel ----------------
         JPanel inputPanel = new JPanel(new BorderLayout(5, 5));
-        inputPanel.setBackground(new Color(50, 50, 50));
+        inputPanel.setBackground(new Color(45, 45, 45));
         inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         searchField = new JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        searchField.setBackground(new Color(200, 200, 200));
         JButton searchButton = new JButton("Search");
         styleButton(searchButton);
 
-        inputPanel.add(new JLabel("Search Player, Number, Team, or Stats:"), BorderLayout.WEST);
+        inputPanel.add(new JLabel("Search Player:"), BorderLayout.WEST);
         inputPanel.add(searchField, BorderLayout.CENTER);
         inputPanel.add(searchButton, BorderLayout.EAST);
         add(inputPanel, BorderLayout.NORTH);
 
-        // ---------------- LEFT: Tabbed Pane ----------------
+        // LEFT TABS
         JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabbedPane.setPreferredSize(new Dimension(200, 0));
@@ -57,18 +55,10 @@ public class BasicSearchGUI extends JFrame {
         tabbedPane.addTab("Search by Stat", createSearchByStatPanel());
         add(tabbedPane, BorderLayout.WEST);
 
-        // ---------------- CENTER: Search Results Area ----------------
-        resultArea = new JTextArea();
-        resultArea.setEditable(false);
-        resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        resultArea.setBackground(new Color(240, 240, 240));
-        resultArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        setCenterComponent(new JScrollPane(resultArea));
-
-        // ---------------- RIGHT: Top Players Panel ----------------
+        // RIGHT PANEL
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setPreferredSize(new Dimension(250, 0));
-        rightPanel.setBackground(new Color(50, 50, 50));
+        rightPanel.setBackground(new Color(45, 45, 45));
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JLabel topLabel = new JLabel("Top Players");
@@ -77,10 +67,15 @@ public class BasicSearchGUI extends JFrame {
         rightPanel.add(topLabel, BorderLayout.NORTH);
 
         JPanel topPlayersPanel = new JPanel(new GridLayout(6, 1, 5, 5));
-        topPlayersPanel.setBackground(new Color(50, 50, 50));
+        topPlayersPanel.setBackground(new Color(45, 45, 45));
         addTopPlayers(topPlayersPanel);
         rightPanel.add(topPlayersPanel, BorderLayout.CENTER);
         add(rightPanel, BorderLayout.EAST);
+
+        // CENTER
+        JLabel welcome = new JLabel("<html><center><h1 style='color:white;'>🏀 NBA Stats Dashboard</h1><p style='color:lightgray;'>Search players, compare stats, and view leaders.</p></center></html>", SwingConstants.CENTER);
+        welcome.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        setCenterComponent(welcome);
 
         // ---------------- Event Handling ----------------
         suggestionModel = new DefaultListModel<>();
@@ -137,16 +132,21 @@ public class BasicSearchGUI extends JFrame {
 
     private void searchPlayers() {
         String query = searchField.getText().trim().toLowerCase();
-        if (query.isEmpty()) {
-            updateCenterWithText("Please enter a search term.");
-            return;
-        }
+        if (query.isEmpty()) return;
 
         List<Player> results = playerData.searchPlayers(query);
         if (results.isEmpty()) {
-            updateCenterWithText("No players found.");
+            setCenterComponent(new JLabel("No players found.", SwingConstants.CENTER));
         } else {
-            updateCenterWithText(formatAsLeaderboard(results, "All"));
+            JPanel resultPanel = new JPanel();
+            resultPanel.setLayout(new BoxLayout(resultPanel, BoxLayout.Y_AXIS));
+            resultPanel.setBackground(new Color(30, 30, 30));
+            for (Player p : results) {
+                resultPanel.add(createPlayerCard(p));
+            }
+            JScrollPane scroll = new JScrollPane(resultPanel);
+            scroll.getVerticalScrollBar().setUnitIncrement(12);
+            setCenterComponent(scroll);
         }
     }
 
@@ -166,19 +166,12 @@ public class BasicSearchGUI extends JFrame {
     }
 
     private void addTopPlayers(JPanel panel) {
-        String[] topPlayers = {
-                "LeBron James", "Stephen Curry", "Giannis Antetokounmpo",
-                "Nikola Jokic", "Kevin Durant", "Luka Doncic"
-        };
-        for (String playerName : topPlayers) {
-            JButton playerButton = new JButton(playerName);
-            playerButton.setFont(new Font("Arial", Font.BOLD, 12));
-            playerButton.setBackground(new Color(70, 130, 180));
-            playerButton.setForeground(Color.WHITE);
-            playerButton.setFocusPainted(false);
-            playerButton.setBorder(BorderFactory.createLineBorder(Color.WHITE));
-            playerButton.addActionListener(e -> displayPlayerProfile(playerName));
-            panel.add(playerButton);
+        String[] topPlayers = {"LeBron James", "Stephen Curry", "Giannis Antetokounmpo", "Nikola Jokic", "Kevin Durant", "Luka Doncic"};
+        for (String name : topPlayers) {
+            JButton btn = new JButton(name);
+            styleButton(btn);
+            btn.addActionListener(e -> displayPlayerProfile(name));
+            panel.add(btn);
         }
     }
 
@@ -193,65 +186,73 @@ public class BasicSearchGUI extends JFrame {
             return;
         }
 
-        JPanel profilePanel = new JPanel();
-        profilePanel.setLayout(new BorderLayout(10, 10));
+        JPanel profilePanel = new JPanel(new BorderLayout(10, 10));
         profilePanel.setBackground(new Color(245, 245, 245));
         profilePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Player Image (center)
-        JLabel imageLabel = new JLabel(loadImage("src/Resources/Images/Players/" + player.name + ".png", 300, 300));
-        imageLabel.setHorizontalAlignment(JLabel.CENTER);
-        profilePanel.add(imageLabel, BorderLayout.CENTER);
+        JPanel top = new JPanel(new BorderLayout());
+        top.setOpaque(false);
+        JLabel pic = new JLabel(loadImage("src/Resources/Images/Players/" + player.name + ".png", 280, 280));
+        JLabel logo = new JLabel(loadImage("src/Resources/Images/Teams/" + player.team + ".png", 80, 80));
+        pic.setHorizontalAlignment(SwingConstants.CENTER);
+        logo.setHorizontalAlignment(SwingConstants.CENTER);
+        top.add(pic, BorderLayout.CENTER);
+        top.add(logo, BorderLayout.SOUTH);
 
-        // Stats panel (bottom)
-        JPanel statsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
-        statsPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-        statsPanel.setBackground(new Color(245, 245, 245));
+        JPanel stats = new JPanel(new GridLayout(1, 3, 20, 0));
+        stats.setBackground(new Color(245, 245, 245));
+        Font font = new Font("Segoe UI", Font.BOLD, 20);
+        stats.add(new JLabel("Points: " + player.points, SwingConstants.CENTER)).setFont(font);
+        stats.add(new JLabel("Rebounds: " + player.rebounds, SwingConstants.CENTER)).setFont(font);
+        stats.add(new JLabel("Assists: " + player.assists, SwingConstants.CENTER)).setFont(font);
 
-        Font statFont = new Font("Arial", Font.BOLD, 18);
-
-        JLabel pointsLabel = new JLabel("Points: " + player.points, JLabel.CENTER);
-        JLabel reboundsLabel = new JLabel("Rebounds: " + player.rebounds, JLabel.CENTER);
-        JLabel assistsLabel = new JLabel("Assists: " + player.assists, JLabel.CENTER);
-
-        pointsLabel.setFont(statFont);
-        reboundsLabel.setFont(statFont);
-        assistsLabel.setFont(statFont);
-
-        statsPanel.add(pointsLabel);
-        statsPanel.add(reboundsLabel);
-        statsPanel.add(assistsLabel);
-
-        profilePanel.add(statsPanel, BorderLayout.SOUTH);
-
+        profilePanel.add(top, BorderLayout.CENTER);
+        profilePanel.add(stats, BorderLayout.SOUTH);
         setCenterComponent(profilePanel);
+    }
+
+    private void showPlayerCards(List<Player> players) {
+        JPanel result = new JPanel();
+        result.setLayout(new BoxLayout(result, BoxLayout.Y_AXIS));
+        result.setBackground(new Color(30, 30, 30));
+        for (Player p : players) result.add(createPlayerCard(p));
+        JScrollPane scroll = new JScrollPane(result);
+        scroll.getVerticalScrollBar().setUnitIncrement(12);
+        setCenterComponent(scroll);
+    }
+
+    private JPanel createPlayerCard(Player p) {
+        JPanel card = new JPanel(new BorderLayout(10, 10));
+        card.setBackground(new Color(50, 50, 50));
+        card.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel image = new JLabel(loadImage("src/Resources/Images/Players/" + p.name + ".png", 80, 80));
+        JLabel logo = new JLabel(loadImage("src/Resources/Images/Teams/" + p.team + ".png", 40, 40));
+
+        JLabel info = new JLabel("<html><b>" + p.name + "</b><br>Team: " + p.team + "<br>PPG: " + p.points + " RPG: " + p.rebounds + " APG: " + p.assists + "</html>");
+        info.setForeground(Color.WHITE);
+        info.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        card.add(image, BorderLayout.WEST);
+        card.add(info, BorderLayout.CENTER);
+        card.add(logo, BorderLayout.EAST);
+
+        return card;
     }
 
     private JPanel createSortByTeamPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        DefaultListModel<String> teamModel = new DefaultListModel<>();
-        JList<String> teamList = new JList<>(teamModel);
-        teamList.setFont(new Font("Arial", Font.PLAIN, 14));
-        teamList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        playerData.getPlayers().stream()
-                .map(p -> p.team)
-                .distinct()
-                .sorted()
-                .forEach(teamModel::addElement);
+        DefaultListModel<String> model = new DefaultListModel<>();
+        JList<String> teamList = new JList<>(model);
+        playerData.getPlayers().stream().map(p -> p.team).distinct().sorted().forEach(model::addElement);
 
         teamList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                String selectedTeam = teamList.getSelectedValue();
-                if (selectedTeam != null) {
-                    StringBuilder sb = new StringBuilder("Players for " + selectedTeam + ":\n");
-                    for (Player p : playerData.getPlayers()) {
-                        if (p.team.equalsIgnoreCase(selectedTeam)) {
-                            sb.append(p.toString()).append("\n");
-                        }
-                    }
-                    updateCenterWithText(sb.toString());
-                }
+                String team = teamList.getSelectedValue();
+                List<Player> filtered = playerData.getPlayers().stream()
+                        .filter(p -> p.team.equalsIgnoreCase(team))
+                        .collect(Collectors.toList());
+                showPlayerCards(filtered);
             }
         });
 
@@ -262,18 +263,15 @@ public class BasicSearchGUI extends JFrame {
     private JPanel createStatLeadersPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 1, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
         String[] stats = {"Points", "Rebounds", "Assists"};
 
         for (String stat : stats) {
-            JButton btn = new JButton("Top 10 " + stat + " Leaders");
-            btn.setFont(new Font("Arial", Font.BOLD, 14));
-            btn.setBackground(new Color(70, 130, 180));
-            btn.setForeground(Color.WHITE);
-            btn.setFocusPainted(false);
-
-            btn.addActionListener(e -> displayStatLeadersWithImages(stat));
-
+            JButton btn = new JButton("Top 10 " + stat);
+            styleButton(btn);
+            btn.addActionListener(e -> {
+                List<Player> sorted = playerData.getTopPlayers(stat.toLowerCase(), 10);
+                showPlayerCards(sorted);
+            });
             panel.add(btn);
         }
 
@@ -344,8 +342,6 @@ public class BasicSearchGUI extends JFrame {
 
     private JPanel createCompareStatsPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
         JComboBox<String> player1Box = new JComboBox<>();
         JComboBox<String> player2Box = new JComboBox<>();
         for (Player p : playerData.getPlayers()) {
@@ -353,34 +349,17 @@ public class BasicSearchGUI extends JFrame {
             player2Box.addItem(p.name);
         }
 
-        JButton compareBtn = new JButton("Compare");
-        compareBtn.setBackground(new Color(70, 130, 180));
-        compareBtn.setForeground(Color.WHITE);
-        compareBtn.setFont(new Font("Arial", Font.BOLD, 13));
-
-        compareBtn.addActionListener(e -> {
-            String p1 = (String) player1Box.getSelectedItem();
-            String p2 = (String) player2Box.getSelectedItem();
-            int comparison = playerData.comparePoints(p1, p2);
-
-            StringBuilder sb = new StringBuilder("Comparison Result:\n\n");
-            Player playerA = playerData.searchPlayers(p1).get(0);
-            Player playerB = playerData.searchPlayers(p2).get(0);
-
-            sb.append(playerA).append("\n");
-            sb.append(playerB).append("\n\n");
-
-            if (comparison == Integer.MIN_VALUE) {
-                sb.append("❌ Error: One or both players not found.");
-            } else if (comparison > 0) {
-                sb.append(p1).append(" scores more points than ").append(p2);
-            } else if (comparison < 0) {
-                sb.append(p2).append(" scores more points than ").append(p1);
-            } else {
-                sb.append(p1).append(" and ").append(p2).append(" have the same points.");
+        JButton compare = new JButton("Compare");
+        styleButton(compare);
+        compare.addActionListener(e -> {
+            Player p1 = playerData.findPlayerByName((String) player1Box.getSelectedItem());
+            Player p2 = playerData.findPlayerByName((String) player2Box.getSelectedItem());
+            if (p1 != null && p2 != null) {
+                JPanel cmp = new JPanel(new GridLayout(1, 2, 10, 0));
+                cmp.add(createPlayerCard(p1));
+                cmp.add(createPlayerCard(p2));
+                setCenterComponent(cmp);
             }
-
-            updateCenterWithText(sb.toString());
         });
 
         panel.add(new JLabel("Player 1:"));
@@ -388,61 +367,41 @@ public class BasicSearchGUI extends JFrame {
         panel.add(new JLabel("Player 2:"));
         panel.add(player2Box);
         panel.add(new JLabel());
-        panel.add(compareBtn);
+        panel.add(compare);
 
         return panel;
     }
 
     private JPanel createSearchByStatPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        String[] options = {"Points", "Rebounds", "Assists"};
+        JComboBox<String> statBox = new JComboBox<>(options);
+        JTextField threshold = new JTextField();
+        JButton filter = new JButton("Filter");
+        styleButton(filter);
 
-        String[] statOptions = {"Points", "Rebounds", "Assists"};
-        JComboBox<String> statBox = new JComboBox<>(statOptions);
-        JTextField thresholdField = new JTextField();
-
-        JButton filterBtn = new JButton("Filter");
-        filterBtn.setBackground(new Color(70, 130, 180));
-        filterBtn.setForeground(Color.WHITE);
-        filterBtn.setFont(new Font("Arial", Font.BOLD, 13));
-
-        filterBtn.addActionListener(e -> {
-            String stat = (String) statBox.getSelectedItem();
-            String thresholdText = thresholdField.getText().trim();
-
+        filter.addActionListener(e -> {
             try {
-                int threshold = Integer.parseInt(thresholdText);
-                List<Player> filtered = new ArrayList<>();
-
-                for (Player p : playerData.getPlayers()) {
-                    int statValue = switch (stat) {
-                        case "Points" -> p.points;
-                        case "Rebounds" -> p.rebounds;
-                        case "Assists" -> p.assists;
-                        default -> 0;
+                int min = Integer.parseInt(threshold.getText());
+                String stat = (String) statBox.getSelectedItem();
+                List<Player> filtered = playerData.getPlayers().stream().filter(p -> {
+                    return switch (stat) {
+                        case "Points" -> p.points >= min;
+                        case "Rebounds" -> p.rebounds >= min;
+                        case "Assists" -> p.assists >= min;
+                        default -> false;
                     };
-                    if (statValue >= threshold) {
-                        filtered.add(p);
-                    }
-                }
-
-                if (filtered.isEmpty()) {
-                    updateCenterWithText("No players found with " + stat + " ≥ " + threshold);
-                } else {
-                    updateCenterWithText(formatAsLeaderboard(filtered, stat));
-                }
-
-            } catch (NumberFormatException ex) {
-                updateCenterWithText("❌ Please enter a valid number.");
-            }
+                }).collect(Collectors.toList());
+                showPlayerCards(filtered);
+            } catch (Exception ignored) {}
         });
 
         panel.add(new JLabel("Stat:"));
         panel.add(statBox);
-        panel.add(new JLabel("Threshold:"));
-        panel.add(thresholdField);
+        panel.add(new JLabel("Min Value:"));
+        panel.add(threshold);
         panel.add(new JLabel());
-        panel.add(filterBtn);
+        panel.add(filter);
 
         return panel;
     }
