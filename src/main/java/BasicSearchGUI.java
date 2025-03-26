@@ -1,3 +1,5 @@
+import com.formdev.flatlaf.FlatDarkLaf;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -14,6 +16,13 @@ public class BasicSearchGUI extends JFrame {
     private JComponent currentCenterComponent;
 
     public BasicSearchGUI() {
+        // Apply FlatLaf modern look
+        try {
+            UIManager.setLookAndFeel(new FlatDarkLaf());
+        } catch (Exception e) {
+            System.err.println("Failed to apply FlatLaf");
+        }
+
         setTitle("NBA Stats Search");
         setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -28,12 +37,10 @@ public class BasicSearchGUI extends JFrame {
         inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         searchField = new JTextField();
-        searchField.setFont(new Font("Arial", Font.PLAIN, 16));
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         searchField.setBackground(new Color(200, 200, 200));
         JButton searchButton = new JButton("Search");
-        searchButton.setFont(new Font("Arial", Font.BOLD, 14));
-        searchButton.setBackground(new Color(70, 130, 180));
-        searchButton.setForeground(Color.WHITE);
+        styleButton(searchButton);
 
         inputPanel.add(new JLabel("Search Player, Number, Team, or Stats:"), BorderLayout.WEST);
         inputPanel.add(searchField, BorderLayout.CENTER);
@@ -42,7 +49,7 @@ public class BasicSearchGUI extends JFrame {
 
         // ---------------- LEFT: Tabbed Pane ----------------
         JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
-        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabbedPane.setPreferredSize(new Dimension(200, 0));
         tabbedPane.addTab("Sort by Team", createSortByTeamPanel());
         tabbedPane.addTab("Stat Leaders", createStatLeadersPanel());
@@ -56,7 +63,7 @@ public class BasicSearchGUI extends JFrame {
         resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
         resultArea.setBackground(new Color(240, 240, 240));
         resultArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        setCenterComponent(new JScrollPane(resultArea)); // Initial center panel
+        setCenterComponent(new JScrollPane(resultArea));
 
         // ---------------- RIGHT: Top Players Panel ----------------
         JPanel rightPanel = new JPanel(new BorderLayout());
@@ -66,7 +73,7 @@ public class BasicSearchGUI extends JFrame {
 
         JLabel topLabel = new JLabel("Top Players");
         topLabel.setForeground(Color.WHITE);
-        topLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        topLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         rightPanel.add(topLabel, BorderLayout.NORTH);
 
         JPanel topPlayersPanel = new JPanel(new GridLayout(6, 1, 5, 5));
@@ -84,6 +91,23 @@ public class BasicSearchGUI extends JFrame {
         });
 
         searchButton.addActionListener(e -> searchPlayers());
+    }
+
+    private void styleButton(JButton btn) {
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setBackground(new Color(60, 60, 60));
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(new Color(80, 80, 80));
+            }
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(new Color(60, 60, 60));
+            }
+        });
     }
 
     private String formatAsLeaderboard(List<Player> players, String statFocus) {
@@ -284,7 +308,7 @@ public class BasicSearchGUI extends JFrame {
             card.setBackground(new Color(245, 245, 245));
 
             JLabel playerImg = new JLabel(loadImage("src/Resources/Images/Players/" + p.name + ".png", 60, 60));
-            //JLabel teamImg = new JLabel(loadImage("src/Resources/images/teams/" + p.team + ".png", 40, 40));
+            JLabel teamImg = new JLabel(loadImage("src/Resources/Images/Teams/" + p.team + ".png", 40, 40));
 
             String statValue = switch (stat) {
                 case "Points" -> p.points + " PPG";
@@ -298,8 +322,8 @@ public class BasicSearchGUI extends JFrame {
 
             card.add(playerImg);
             card.add(Box.createHorizontalStrut(10));
-            //card.add(teamImg);
-            //card.add(Box.createHorizontalStrut(10));
+            card.add(teamImg);
+            card.add(Box.createHorizontalStrut(10));
             card.add(label);
             displayPanel.add(card);
         }
