@@ -19,7 +19,10 @@ public class BasicSearchGUI extends JFrame {
     private JTextArea resultArea;
     private PlayerData playerData;
     private DefaultListModel<String> suggestionModel;
-    private JComponent currentCenterComponent;
+
+    // Keep a reference to the main tabbed pane and a search results panel
+    private JTabbedPane tabbedPane;
+    private JPanel searchResultsPanel = null;
 
     public BasicSearchGUI() {
         try {
@@ -36,7 +39,7 @@ public class BasicSearchGUI extends JFrame {
 
         playerData = new PlayerData("src/Resources/players.txt");
 
-        // -------- Input Panel --------
+        // -------- Top Input Panel --------
         JPanel inputPanel = new JPanel(new BorderLayout(5, 5));
         inputPanel.setBackground(PANEL_COLOR);
         inputPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -62,15 +65,16 @@ public class BasicSearchGUI extends JFrame {
         inputPanel.add(searchButton, BorderLayout.EAST);
         add(inputPanel, BorderLayout.NORTH);
 
-        // -------- Left Tabs Panel --------
-        JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
+        // -------- Main Tabs (Full-Page) --------
+        tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabbedPane.setPreferredSize(new Dimension(200, 0));
+        tabbedPane.addTab("Home", createHomePanel());
         tabbedPane.addTab("Sort by Team", createSortByTeamPanel());
         tabbedPane.addTab("Stat Leaders", createStatLeadersPanel());
         tabbedPane.addTab("Compare Stats", createCompareStatsPanel());
         tabbedPane.addTab("Search by Stat", createSearchByStatPanel());
-        add(tabbedPane, BorderLayout.WEST);
+        tabbedPane.addTab("FAQ", createFAQPanel());
+        add(tabbedPane, BorderLayout.CENTER);
 
         // -------- Right Panel (Top Players) --------
         JPanel rightPanel = new JPanel(new BorderLayout(10, 10));
@@ -89,17 +93,6 @@ public class BasicSearchGUI extends JFrame {
         rightPanel.add(topPlayersPanel, BorderLayout.CENTER);
         add(rightPanel, BorderLayout.EAST);
 
-        // -------- Center Welcome Panel --------
-        JLabel welcome = new JLabel(
-                "<html><div style='text-align:center;'>" +
-                        "<h1 style='color:white;margin:0;'>🏀 NBA Stats Dashboard</h1>" +
-                        "<p style='color:lightgray;font-size:16px;'>Search players, compare stats, and view leaders.</p>" +
-                        "</div></html>",
-                SwingConstants.CENTER
-        );
-        welcome.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-        setCenterComponent(welcome);
-
         // -------- Event Handling --------
         suggestionModel = new DefaultListModel<>();
         searchField.getDocument().addDocumentListener(new DocumentListener() {
@@ -109,6 +102,65 @@ public class BasicSearchGUI extends JFrame {
         });
 
         searchButton.addActionListener(e -> searchPlayers());
+    }
+
+    // Home panel with a welcome message
+    private JPanel createHomePanel() {
+        JPanel homePanel = new JPanel(new BorderLayout());
+        homePanel.setBackground(BACKGROUND_COLOR);
+        JLabel welcome = new JLabel(
+                "<html><div style='text-align:center;'>" +
+                        "<h1 style='color:white;margin:0;'>🏀 NBA Stats Dashboard</h1>" +
+                        "<p style='color:lightgray;font-size:16px;'>Search players, compare stats, and view leaders.</p>" +
+                        "</div></html>",
+                SwingConstants.CENTER
+        );
+        welcome.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        homePanel.add(welcome, BorderLayout.CENTER);
+        return homePanel;
+    }
+
+    // FAQ Panel
+    private JPanel createFAQPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(BACKGROUND_COLOR);
+
+        String faqText = """
+        Q: How do I search for a player?
+        A: Type the player's name in the search bar and press Enter.
+
+        Q: How can I compare two players?
+        A: Go to the 'Compare Stats' tab and select two players.
+
+        Q: Where does the data come from?
+        A: The data is loaded from 'players.txt' located in the Resources folder.
+
+        Q: Can I filter players by stats?
+        A: Yes, use the 'Search by Stat' tab and enter a minimum value.
+
+        Q: Why is a player missing from the database?
+        A: The dataset might be outdated; ensure 'players.txt' is up to date.
+        """;
+
+        JTextArea faqArea = new JTextArea(faqText);
+        faqArea.setEditable(false);
+        faqArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        faqArea.setForeground(TEXT_COLOR);
+        faqArea.setBackground(new Color(45, 45, 45));
+        faqArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JScrollPane scrollPane = new JScrollPane(faqArea);
+        scrollPane.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+                "Frequently Asked Questions",
+                0,
+                0,
+                new Font("Segoe UI", Font.BOLD, 14),
+                TEXT_COLOR
+        ));
+
+        panel.add(scrollPane, BorderLayout.CENTER);
+        return panel;
     }
 
     // Refined button styling with rounded corners
@@ -134,7 +186,7 @@ public class BasicSearchGUI extends JFrame {
         });
     }
 
-    // Update suggestions (if using suggestion popup, you might integrate a JList in a popup)
+    // Update suggestions (for future use if you add a suggestion popup)
     private void updateSuggestions() {
         String text = searchField.getText().toLowerCase();
         suggestionModel.clear();
@@ -145,13 +197,14 @@ public class BasicSearchGUI extends JFrame {
         }
     }
 
+    // Search players and update (or create) the "Search Results" tab
     private void searchPlayers() {
         String query = searchField.getText().trim().toLowerCase();
         if (query.isEmpty()) return;
 
         List<Player> results = playerData.searchPlayers(query);
         if (results.isEmpty()) {
-            updateCenterWithText("❌ Player not found.");
+            updateSearchResultsPanel(new JLabel("❌ Player not found.", SwingConstants.CENTER));
         } else {
             JPanel resultPanel = new JPanel();
             resultPanel.setLayout(new BoxLayout(resultPanel, BoxLayout.Y_AXIS));
@@ -162,30 +215,24 @@ public class BasicSearchGUI extends JFrame {
             }
             JScrollPane scroll = new JScrollPane(resultPanel);
             scroll.getVerticalScrollBar().setUnitIncrement(12);
-            setCenterComponent(scroll);
+            updateSearchResultsPanel(scroll);
         }
     }
 
-    private void updateCenterWithText(String text) {
-        resultArea = new JTextArea(text);
-        resultArea.setEditable(false);
-        resultArea.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        resultArea.setBackground(BACKGROUND_COLOR);
-        resultArea.setForeground(TEXT_COLOR);
-        resultArea.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        setCenterComponent(new JScrollPane(resultArea));
-    }
-
-    private void setCenterComponent(JComponent newComponent) {
-        if (currentCenterComponent != null) {
-            getContentPane().remove(currentCenterComponent);
+    // Creates or updates the "Search Results" tab
+    private void updateSearchResultsPanel(Component comp) {
+        if (searchResultsPanel == null) {
+            searchResultsPanel = new JPanel(new BorderLayout());
+            tabbedPane.addTab("Search Results", searchResultsPanel);
         }
-        currentCenterComponent = newComponent;
-        getContentPane().add(currentCenterComponent, BorderLayout.CENTER);
-        revalidate();
-        repaint();
+        searchResultsPanel.removeAll();
+        searchResultsPanel.add(comp, BorderLayout.CENTER);
+        searchResultsPanel.revalidate();
+        searchResultsPanel.repaint();
+        tabbedPane.setSelectedComponent(searchResultsPanel);
     }
 
+    // Add Top Players to right panel
     private void addTopPlayers(JPanel panel) {
         String[] topPlayers = {"LeBron James", "Stephen Curry", "Giannis Antetokounmpo", "Nikola Jokic", "Kevin Durant", "Luka Doncic"};
         for (String name : topPlayers) {
@@ -196,6 +243,7 @@ public class BasicSearchGUI extends JFrame {
         }
     }
 
+    // Display an individual player's profile
     private void displayPlayerProfile(String playerName) {
         Player player = playerData.searchPlayers(playerName).stream()
                 .filter(p -> p.name.equalsIgnoreCase(playerName))
@@ -203,7 +251,8 @@ public class BasicSearchGUI extends JFrame {
                 .orElse(null);
 
         if (player == null) {
-            updateCenterWithText("❌ Player not found.");
+            // Instead of replacing the center, update Search Results tab
+            updateSearchResultsPanel(new JLabel("❌ Player not found.", SwingConstants.CENTER));
             return;
         }
 
@@ -235,22 +284,10 @@ public class BasicSearchGUI extends JFrame {
 
         profilePanel.add(top, BorderLayout.CENTER);
         profilePanel.add(stats, BorderLayout.SOUTH);
-        setCenterComponent(profilePanel);
+        updateSearchResultsPanel(profilePanel);
     }
 
-    private void showPlayerCards(List<Player> players) {
-        JPanel result = new JPanel();
-        result.setLayout(new BoxLayout(result, BoxLayout.Y_AXIS));
-        result.setBackground(BACKGROUND_COLOR);
-        for (Player p : players) {
-            result.add(createPlayerCard(p));
-            result.add(Box.createVerticalStrut(10));
-        }
-        JScrollPane scroll = new JScrollPane(result);
-        scroll.getVerticalScrollBar().setUnitIncrement(12);
-        setCenterComponent(scroll);
-    }
-
+    // Display a player card (used in search results and team panels)
     private JPanel createPlayerCard(Player p) {
         JPanel card = new JPanel(new BorderLayout(10, 10));
         card.setBackground(new Color(50, 50, 50));
@@ -274,14 +311,30 @@ public class BasicSearchGUI extends JFrame {
         return card;
     }
 
+    // "Sort by Team" tab with dynamic content update
     private JPanel createSortByTeamPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BACKGROUND_COLOR);
+
+        // Left list panel
         DefaultListModel<String> model = new DefaultListModel<>();
         JList<String> teamList = new JList<>(model);
         teamList.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         teamList.setBackground(BACKGROUND_COLOR);
         teamList.setForeground(TEXT_COLOR);
-        playerData.getPlayers().stream().map(p -> p.team).distinct().sorted().forEach(model::addElement);
+        playerData.getPlayers().stream()
+                .map(p -> p.team)
+                .distinct()
+                .sorted()
+                .forEach(model::addElement);
+        JScrollPane listScroll = new JScrollPane(teamList);
+
+        // Right display panel for players of selected team
+        JPanel displayPanel = new JPanel();
+        displayPanel.setLayout(new BoxLayout(displayPanel, BoxLayout.Y_AXIS));
+        displayPanel.setBackground(BACKGROUND_COLOR);
+        JScrollPane displayScroll = new JScrollPane(displayPanel);
+        displayScroll.getVerticalScrollBar().setUnitIncrement(12);
 
         teamList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -289,14 +342,23 @@ public class BasicSearchGUI extends JFrame {
                 List<Player> filtered = playerData.getPlayers().stream()
                         .filter(p -> p.team.equalsIgnoreCase(team))
                         .collect(Collectors.toList());
-                showPlayerCards(filtered);
+
+                displayPanel.removeAll();
+                for (Player p : filtered) {
+                    displayPanel.add(createPlayerCard(p));
+                    displayPanel.add(Box.createVerticalStrut(10));
+                }
+                displayPanel.revalidate();
+                displayPanel.repaint();
             }
         });
 
-        panel.add(new JScrollPane(teamList), BorderLayout.CENTER);
-        return panel;
+        mainPanel.add(listScroll, BorderLayout.WEST);
+        mainPanel.add(displayScroll, BorderLayout.CENTER);
+        return mainPanel;
     }
 
+    // "Stat Leaders" tab with buttons to show top 10 players by stat
     private JPanel createStatLeadersPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 1, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -307,13 +369,23 @@ public class BasicSearchGUI extends JFrame {
             styleButton(btn);
             btn.addActionListener(e -> {
                 List<Player> sorted = playerData.getTopPlayers(stat.toLowerCase(), 10);
-                showPlayerCards(sorted);
+                JPanel resultPanel = new JPanel();
+                resultPanel.setLayout(new BoxLayout(resultPanel, BoxLayout.Y_AXIS));
+                resultPanel.setBackground(BACKGROUND_COLOR);
+                for (Player p : sorted) {
+                    resultPanel.add(createPlayerCard(p));
+                    resultPanel.add(Box.createVerticalStrut(10));
+                }
+                JScrollPane scroll = new JScrollPane(resultPanel);
+                scroll.getVerticalScrollBar().setUnitIncrement(12);
+                updateSearchResultsPanel(scroll);
             });
             panel.add(btn);
         }
         return panel;
     }
 
+    // "Compare Stats" tab to compare two players side-by-side
     private JPanel createCompareStatsPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -333,7 +405,7 @@ public class BasicSearchGUI extends JFrame {
                 JPanel cmp = new JPanel(new GridLayout(1, 2, 10, 0));
                 cmp.add(createPlayerCard(p1));
                 cmp.add(createPlayerCard(p2));
-                setCenterComponent(cmp);
+                updateSearchResultsPanel(cmp);
             }
         });
 
@@ -347,6 +419,7 @@ public class BasicSearchGUI extends JFrame {
         return panel;
     }
 
+    // "Search by Stat" tab to filter players based on a minimum value
     private JPanel createSearchByStatPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -368,7 +441,17 @@ public class BasicSearchGUI extends JFrame {
                         default -> false;
                     };
                 }).collect(Collectors.toList());
-                showPlayerCards(filtered);
+
+                JPanel resultPanel = new JPanel();
+                resultPanel.setLayout(new BoxLayout(resultPanel, BoxLayout.Y_AXIS));
+                resultPanel.setBackground(BACKGROUND_COLOR);
+                for (Player p : filtered) {
+                    resultPanel.add(createPlayerCard(p));
+                    resultPanel.add(Box.createVerticalStrut(10));
+                }
+                JScrollPane scroll = new JScrollPane(resultPanel);
+                scroll.getVerticalScrollBar().setUnitIncrement(12);
+                updateSearchResultsPanel(scroll);
             } catch (Exception ignored) {}
         });
 
@@ -382,6 +465,7 @@ public class BasicSearchGUI extends JFrame {
         return panel;
     }
 
+    // Helper method to load and scale images
     private ImageIcon loadImage(String path, int width, int height) {
         try {
             Image img = new ImageIcon(path).getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
