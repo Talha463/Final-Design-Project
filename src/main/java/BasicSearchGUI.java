@@ -477,8 +477,23 @@ public class BasicSearchGUI extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            BasicSearchGUI gui = new BasicSearchGUI();
-            gui.setVisible(true);
+            // Create a dummy frame to act as parent for the login dialog
+            JFrame frame = new JFrame();
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+            // Display the login/register dialog
+            LoginDialog loginDialog = new LoginDialog(frame);
+            loginDialog.setVisible(true);
+
+            // If authenticated, launch the main GUI
+            if (loginDialog.isAuthenticated()) {
+                BasicSearchGUI gui = new BasicSearchGUI();
+                gui.setVisible(true);
+            } else {
+                // Optionally exit or keep prompting if needed
+                System.exit(0);
+            }
         });
     }
+
 }
