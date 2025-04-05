@@ -1,4 +1,6 @@
 import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -9,11 +11,11 @@ import javax.swing.event.DocumentListener;
 
 public class BasicSearchGUI extends JFrame {
     // Define a consistent color palette
-    private static final Color BACKGROUND_COLOR = new Color(30, 30, 30);
-    private static final Color PANEL_COLOR = new Color(45, 45, 45);
-    private static final Color BUTTON_COLOR = new Color(60, 60, 60);
-    private static final Color BUTTON_HOVER_COLOR = new Color(80, 80, 80);
-    private static final Color TEXT_COLOR = Color.WHITE;
+    private static final Color BACKGROUND_COLOR = new Color(245, 245, 245);         // light gray background
+    private static final Color PANEL_COLOR = Color.WHITE;                           // pure white panels
+    private static final Color BUTTON_COLOR = new Color(76, 175, 80);               // green primary button
+    private static final Color BUTTON_HOVER_COLOR = new Color(56, 142, 60);         // darker hover green
+    private static final Color TEXT_COLOR = new Color(33, 33, 33);                  // near-black text
 
     private JTextField searchField;
     private JTextArea resultArea;
@@ -26,7 +28,7 @@ public class BasicSearchGUI extends JFrame {
 
     public BasicSearchGUI() {
         try {
-            UIManager.setLookAndFeel(new FlatDarkLaf());
+            UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (Exception e) {
             System.err.println("Failed to apply FlatLaf");
         }
@@ -110,7 +112,7 @@ public class BasicSearchGUI extends JFrame {
         homePanel.setBackground(BACKGROUND_COLOR);
         JLabel welcome = new JLabel(
                 "<html><div style='text-align:center;'>" +
-                        "<h1 style='color:white;margin:0;'>🏀 NBA Stats Dashboard</h1>" +
+                        "<h1 style='color:black;margin:0;'>🏀 NBA Stats Dashboard</h1>" +
                         "<p style='color:lightgray;font-size:16px;'>Search players, compare stats, and view leaders.</p>" +
                         "</div></html>",
                 SwingConstants.CENTER
@@ -146,7 +148,7 @@ public class BasicSearchGUI extends JFrame {
         faqArea.setEditable(false);
         faqArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         faqArea.setForeground(TEXT_COLOR);
-        faqArea.setBackground(new Color(45, 45, 45));
+        faqArea.setBackground(new Color(245, 245, 245));
         faqArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JScrollPane scrollPane = new JScrollPane(faqArea);
@@ -290,7 +292,7 @@ public class BasicSearchGUI extends JFrame {
     // Display a player card (used in search results and team panels)
     private JPanel createPlayerCard(Player p) {
         JPanel card = new JPanel(new BorderLayout(10, 10));
-        card.setBackground(new Color(50, 50, 50));
+        card.setBackground(new Color(245, 245, 245));
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BUTTON_COLOR),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
